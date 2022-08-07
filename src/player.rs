@@ -184,8 +184,11 @@ fn player_movement(
                 &animations,
             );
         } else {
-            if !animation.eq(&animations.idle) && jumper.grounded {
+            if animation.0 == animations.idle && jumper.grounded {
                 animation.0 = animations.idle.clone();
+                animation_state.reset();
+            } else if animation.0 == animations.jump && velocity.linvel.y < VEL_THRESHOLD {
+                animation.0 = animations.swim.clone();
                 animation_state.reset();
             }
         }
