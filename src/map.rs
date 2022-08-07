@@ -152,7 +152,11 @@ fn setup_boundaries(mut commands: Commands) {
         .spawn()
         .insert_bundle(TransformBundle {
             local: Transform {
-                translation: Vec3::new(MAP_WIDTH as f32 * TILE_WIDTH - TILE_WIDTH / 2., MAP_HEIGHT as f32 * TILE_HEIGHT / 2., 0.),
+                translation: Vec3::new(
+                    MAP_WIDTH as f32 * TILE_WIDTH - TILE_WIDTH / 2.,
+                    MAP_HEIGHT as f32 * TILE_HEIGHT / 2.,
+                    0.,
+                ),
                 ..default()
             },
             ..default()
