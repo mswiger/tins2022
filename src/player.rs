@@ -94,7 +94,6 @@ fn setup_player(
         .insert(Animation(idle_handle.clone()))
         .insert(AnimationState::default())
         .insert(Collider::cuboid(7.0, 8.0))
-        // .insert(Collider::capsule_y(1.0, 7.0))
         .insert(RigidBody::Dynamic)
         .insert(LockedAxes::ROTATION_LOCKED);
 }
