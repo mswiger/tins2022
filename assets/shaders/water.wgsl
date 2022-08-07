@@ -38,7 +38,6 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     // Get screen position with coordinates from 0 to 1
     let uv = position.xy / vec2<f32>(view.width, view.height);
-    /* let scale = 0.0015; */
     let scale = 0.003;
 
     let texture_dimensions = textureDimensions(texture);
