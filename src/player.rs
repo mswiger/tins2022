@@ -25,8 +25,6 @@ struct PlayerAnimations {
     swim: Handle<AnimationData>,
 }
 
-pub struct PlayerPlugin;
-
 #[derive(PartialEq)]
 enum Direction {
     Left = 0,
@@ -35,6 +33,8 @@ enum Direction {
 
 #[derive(Component)]
 struct PlayerDirection(Direction);
+
+pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
