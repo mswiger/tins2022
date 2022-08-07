@@ -1,10 +1,12 @@
 mod app;
 mod assets;
+mod camera;
 mod map;
 mod player;
 
 use app::AppState;
 use assets::GameAssets;
+use camera::CameraPlugin;
 use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_asset_loader::prelude::*;
 use map::MapPlugin;
@@ -26,19 +28,8 @@ fn main() {
         })
         .insert_resource(ImageSettings::default_nearest()) // prevents blurry sprites
         .add_plugins(DefaultPlugins)
+        .add_plugin(CameraPlugin)
         .add_plugin(MapPlugin)
         .add_plugin(PlayerPlugin)
-        .add_startup_system(setup)
         .run();
-}
-
-fn setup(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle {
-        projection: bevy::render::camera::OrthographicProjection {
-            scale: 1./3.,
-            ..default()
-        },
-        transform: Transform::from_xyz(280., 152., 999.),
-        ..default()
-    });
 }
