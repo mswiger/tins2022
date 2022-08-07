@@ -1,9 +1,11 @@
+mod animation;
 mod app;
 mod assets;
 mod camera;
 mod map;
 mod player;
 
+use animation::AnimationPlugin;
 use app::AppState;
 use assets::GameAssets;
 use camera::CameraPlugin;
@@ -31,5 +33,6 @@ fn main() {
         .add_plugin(CameraPlugin)
         .add_plugin(MapPlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(AnimationPlugin)
         .run();
 }

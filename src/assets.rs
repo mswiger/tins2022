@@ -18,8 +18,8 @@ pub struct GameAssets {
     #[asset(texture_atlas(
         tile_size_x = 16.,
         tile_size_y = 16.,
-        columns = 1,
-        rows = 1,
+        columns = 4,
+        rows = 4,
         padding_x = 0.,
         padding_y = 0.
     ))]
