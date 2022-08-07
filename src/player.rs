@@ -4,7 +4,11 @@ use super::assets::GameAssets;
 use super::map::{Map, TILE_HEIGHT, TILE_WIDTH};
 use benimator::Frame;
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 use std::time::Duration;
+
+#[derive(Component)]
+struct Player;
 
 struct PlayerAnimations {
     idle: Handle<AnimationData>,
@@ -15,9 +19,19 @@ struct PlayerAnimations {
 
 pub struct PlayerPlugin;
 
+#[derive(PartialEq)]
+enum Direction {
+    Left = 0,
+    Right = 1,
+}
+
+#[derive(Component)]
+struct PlayerDirection(Direction);
+
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_player));
+        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_player))
+            .add_system_set(SystemSet::on_update(AppState::Game).with_system(player_movement));
     }
 }
 
@@ -51,8 +65,8 @@ fn setup_player(
         Frame::new(4, Duration::from_millis(250)),
         Frame::new(5, Duration::from_millis(250)),
     ]));
-    let jump_handle = animations.add(jump);
 
+    let jump_handle = animations.add(jump);
     commands.insert_resource(PlayerAnimations {
         idle: idle_handle.clone(),
         walk: walk_handle.clone(),
@@ -75,6 +89,54 @@ fn setup_player(
             },
             ..default()
         })
+        .insert(Player)
+        .insert(PlayerDirection(Direction::Left))
         .insert(Animation(idle_handle.clone()))
-        .insert(AnimationState::default());
+        .insert(AnimationState::default())
+        .insert(Collider::cuboid(7.0, 8.0))
+        // .insert(Collider::capsule_y(1.0, 7.0))
+        .insert(RigidBody::Dynamic)
+        .insert(LockedAxes::ROTATION_LOCKED);
+}
+
+fn player_movement(
+    keyboard_input: Res<Input<KeyCode>>,
+    animations: Res<PlayerAnimations>,
+    mut players: Query<
+        (
+            &mut Transform,
+            &mut Animation,
+            &mut AnimationState,
+            &mut TextureAtlasSprite,
+            &mut PlayerDirection,
+        ),
+        (With<RigidBody>, With<Player>),
+    >,
+) {
+    for (mut transform, mut animation, mut animation_state, mut sprite, mut direction) in
+        players.iter_mut()
+    {
+        if keyboard_input.pressed(KeyCode::Left) {
+            transform.translation.x -= 0.2;
+            if !animation.eq(&animations.walk) || direction.0 != Direction::Left {
+                direction.0 = Direction::Left;
+                sprite.flip_x = false;
+                animation.0 = animations.walk.clone();
+                animation_state.reset();
+            }
+        } else if keyboard_input.pressed(KeyCode::Right) {
+            transform.translation.x += 0.2;
+            if !animation.eq(&animations.walk) || direction.0 != Direction::Right {
+                direction.0 = Direction::Right;
+                sprite.flip_x = true;
+                animation.0 = animations.walk.clone();
+                animation_state.reset();
+            }
+        } else {
+            if !animation.eq(&animations.idle) {
+                animation.0 = animations.idle.clone();
+                animation_state.reset();
+            }
+        }
+    }
 }

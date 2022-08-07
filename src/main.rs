@@ -11,6 +11,7 @@ use assets::GameAssets;
 use camera::CameraPlugin;
 use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_asset_loader::prelude::*;
+use bevy_rapier2d::prelude::*;
 use map::MapPlugin;
 use player::PlayerPlugin;
 
@@ -34,5 +35,6 @@ fn main() {
         .add_plugin(MapPlugin)
         .add_plugin(PlayerPlugin)
         .add_plugin(AnimationPlugin)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .run();
 }

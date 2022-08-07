@@ -6,6 +6,7 @@ use bevy::{
     reflect::TypeUuid,
     utils::BoxedFuture,
 };
+use bevy_rapier2d::prelude::*;
 use std::str;
 
 pub const MAP_WIDTH: usize = 36;
@@ -82,6 +83,7 @@ impl Plugin for MapPlugin {
             .add_system_set(
                 SystemSet::on_enter(AppState::Game)
                     .with_system(setup_map)
+                    .with_system(setup_boundaries)
                     .with_system(setup_music),
             );
     }
@@ -97,7 +99,7 @@ fn setup_map(mut commands: Commands, maps: Res<Assets<Map>>, game_assets: Res<Ga
                 Tile::Wall => 0,
                 _ => 1,
             };
-            commands.spawn_bundle(SpriteSheetBundle {
+            let mut entity = commands.spawn_bundle(SpriteSheetBundle {
                 texture_atlas: game_assets.tile_set_atlas.clone(),
                 transform: Transform::from_translation(Vec3::new(
                     TILE_WIDTH * j as f32,
@@ -110,8 +112,52 @@ fn setup_map(mut commands: Commands, maps: Res<Assets<Map>>, game_assets: Res<Ga
                 },
                 ..default()
             });
+
+            if tile == Tile::Wall {
+                // Add a little overlap between colliders to prevent player from getting stuck
+                // between tiles.
+                entity.insert(Collider::cuboid(8.1, 8.1));
+            }
         }
     }
+}
+
+fn setup_boundaries(mut commands: Commands) {
+    // Floor boundary
+    commands
+        .spawn()
+        .insert_bundle(TransformBundle {
+            local: Transform {
+                translation: Vec3::new(MAP_WIDTH as f32 * TILE_WIDTH / 2., -TILE_HEIGHT / 2., 0.),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Collider::cuboid(MAP_WIDTH as f32 * TILE_WIDTH / 2., 0.));
+
+    // Left wall boundary
+    commands
+        .spawn()
+        .insert_bundle(TransformBundle {
+            local: Transform {
+                translation: Vec3::new(-TILE_WIDTH / 2., MAP_HEIGHT as f32 * TILE_HEIGHT / 2., 0.),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Collider::cuboid(0., MAP_HEIGHT as f32 * TILE_HEIGHT / 2.));
+
+    // Right wall boundary
+    commands
+        .spawn()
+        .insert_bundle(TransformBundle {
+            local: Transform {
+                translation: Vec3::new(MAP_WIDTH as f32 * TILE_WIDTH - TILE_WIDTH / 2., MAP_HEIGHT as f32 * TILE_HEIGHT / 2., 0.),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(Collider::cuboid(0., MAP_HEIGHT as f32 * TILE_HEIGHT / 2.));
 }
 
 fn setup_music(game_assets: Res<GameAssets>, audio: Res<Audio>) {

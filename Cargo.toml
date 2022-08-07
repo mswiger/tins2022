@@ -13,6 +13,7 @@ opt-level = 3
 
 [dependencies]
 benimator = "4.0.0-beta.2"
+bevy_rapier2d = "0.16.0"
 
 [dependencies.bevy]
 version = "0.8"
