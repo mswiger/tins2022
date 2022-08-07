@@ -28,4 +28,7 @@ pub struct GameAssets {
 
     #[asset(path = "maps/1.map")]
     pub map: Handle<Map>,
+
+    #[asset(path = "music/Bonedust - When You Are Dead.mp3")]
+    pub bgm: Handle<AudioSource>,
 }

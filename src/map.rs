@@ -79,7 +79,11 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         app.add_asset::<Map>()
             .init_asset_loader::<MapLoader>()
-            .add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_map));
+            .add_system_set(
+                SystemSet::on_enter(AppState::Game)
+                    .with_system(setup_map)
+                    .with_system(setup_music),
+            );
     }
 }
 
@@ -108,4 +112,11 @@ fn setup_map(mut commands: Commands, maps: Res<Assets<Map>>, game_assets: Res<Ga
             });
         }
     }
+}
+
+fn setup_music(game_assets: Res<GameAssets>, audio: Res<Audio>) {
+    audio.play_with_settings(
+        game_assets.bgm.clone(),
+        PlaybackSettings::LOOP.with_volume(0.75),
+    );
 }
