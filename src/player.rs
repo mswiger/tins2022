@@ -211,6 +211,9 @@ fn update_move_anim(
     {
         animation.0 = animations.swim.clone();
         animation_state.reset();
+    } else if animation.0 == animations.walk && velocity.linvel.y < -VEL_THRESHOLD {
+        animation.0 = animations.swim.clone();
+        animation_state.reset();
     }
 }
 
