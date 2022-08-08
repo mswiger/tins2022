@@ -9,7 +9,7 @@ use bevy_rapier2d::prelude::*;
 use std::time::Duration;
 
 const ENEMY_VEL_MAGNITUDE: f32 = 30.;
-const ENEMY_ATTACK_RADIUS: f32 = 80.;
+const ENEMY_ATTACK_RADIUS: f32 = 64.;
 
 #[derive(PartialEq)]
 enum EnemyState {

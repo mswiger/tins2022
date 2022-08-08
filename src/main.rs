@@ -5,6 +5,7 @@ mod camera;
 mod enemy;
 mod map;
 mod player;
+mod portal;
 mod treasure;
 
 use animation::AnimationPlugin;
@@ -17,6 +18,7 @@ use camera::CameraPlugin;
 use enemy::EnemyPlugin;
 use map::MapPlugin;
 use player::PlayerPlugin;
+use portal::PortalPlugin;
 use treasure::TreasurePlugin;
 
 fn main() {
@@ -41,6 +43,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_plugin(AnimationPlugin)
+        .add_plugin(PortalPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_system(bevy::window::close_on_esc)
         .run();

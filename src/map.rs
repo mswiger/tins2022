@@ -25,6 +25,7 @@ pub enum Tile {
 pub struct Map {
     pub tiles: [[Tile; MAP_WIDTH]; MAP_HEIGHT],
     pub player_spawn: (u32, u32),
+    pub portal_spawn: (u32, u32),
     pub treasures: Vec<(u32, u32)>,
     pub enemies: Vec<(u32, u32)>,
 }
@@ -42,6 +43,7 @@ impl AssetLoader for MapLoader {
             let mut map = Map {
                 tiles: [[Tile::Empty; MAP_WIDTH]; MAP_HEIGHT],
                 player_spawn: (0, 0),
+                portal_spawn: (0, 0),
                 treasures: vec![],
                 enemies: vec![],
             };
@@ -70,6 +72,10 @@ impl AssetLoader for MapLoader {
                         }
                         'E' => {
                             map.enemies.push((j as u32, i as u32));
+                            Tile::Empty
+                        },
+                        'X' => {
+                            map.portal_spawn = (j as u32, i as u32);
                             Tile::Empty
                         }
                         _ => Tile::Empty,
