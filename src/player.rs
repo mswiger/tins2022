@@ -4,7 +4,7 @@ use super::assets::GameAssets;
 use super::map::{Map, TILE_HEIGHT, TILE_WIDTH};
 use super::treasure::Treasure;
 use benimator::Frame;
-use bevy::prelude::*;
+use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use bevy_rapier2d::prelude::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -30,11 +30,12 @@ struct Jumper {
 #[derive(Component)]
 struct Message(Duration);
 
-struct PlayerAnimations {
-    idle: Handle<AnimationData>,
-    walk: Handle<AnimationData>,
-    jump: Handle<AnimationData>,
-    swim: Handle<AnimationData>,
+pub struct PlayerAnimations {
+    pub idle: Handle<AnimationData>,
+    pub walk: Handle<AnimationData>,
+    pub jump: Handle<AnimationData>,
+    pub swim: Handle<AnimationData>,
+    pub dead: Handle<AnimationData>,
 }
 
 #[derive(PartialEq)]
@@ -46,18 +47,74 @@ enum Direction {
 #[derive(Component)]
 struct PlayerDirection(Direction);
 
+#[derive(Component)]
+struct Instructions;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_player))
-            .add_system_set(
-                SystemSet::on_update(AppState::Game)
-                    .with_system(player_movement)
-                    .with_system(jump_reset)
-                    .with_system(collect_treasure)
-                    .with_system(despawn_messages),
-            );
+        app.add_system_set(
+            SystemSet::on_enter(AppState::Game)
+                .with_system(setup_instructions)
+                .with_system(setup_player),
+        )
+        .add_system_set(
+            SystemSet::on_update(AppState::Game)
+                .with_system(player_movement)
+                .with_system(jump_reset)
+                .with_system(collect_treasure)
+                .with_system(despawn_messages)
+                .with_system(despawn_instructions),
+        );
+    }
+}
+
+fn setup_instructions(mut commands: Commands, game_assets: Res<GameAssets>) {
+    let mut node = commands.spawn_bundle(NodeBundle {
+        style: Style {
+            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+            position_type: PositionType::Absolute,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::FlexEnd,
+            ..default()
+        },
+        color: UiColor(Color::NONE),
+        ..default()
+    });
+    node.add_children(|parent| {
+        parent
+            .spawn_bundle(
+                TextBundle::from_section(
+                    "ACQUIRE\nCURRENCY.",
+                    TextStyle {
+                        font: game_assets.ui_font.clone(),
+                        font_size: 200.0,
+                        color: Color::WHITE,
+                    },
+                )
+                .with_text_alignment(TextAlignment::CENTER)
+                .with_style(Style {
+                    align_self: AlignSelf::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                }),
+            )
+            .id()
+    });
+    node.insert(Instructions);
+}
+
+fn despawn_instructions(
+    mut commands: Commands,
+    ins_query: Query<Entity, With<Instructions>>,
+    mut keyboard_input_events: EventReader<KeyboardInput>,
+) {
+    for _event in keyboard_input_events.iter() {
+        if !ins_query.iter().next().is_none() {
+            let instructions = ins_query.single();
+            commands.entity(instructions).despawn_recursive();
+        }
     }
 }
 
@@ -93,11 +150,18 @@ fn setup_player(
     ]));
     let jump_handle = animations.add(jump);
 
+    let dead = AnimationData(benimator::Animation::from_frames(vec![Frame::new(
+        8,
+        Duration::from_millis(250),
+    )]));
+    let dead_handle = animations.add(dead);
+
     commands.insert_resource(PlayerAnimations {
         idle: idle_handle.clone(),
         walk: walk_handle.clone(),
         jump: jump_handle.clone(),
         swim: swim_handle.clone(),
+        dead: dead_handle.clone(),
     });
 
     let map = maps.get(&game_assets.map).unwrap();
@@ -160,6 +224,9 @@ fn player_movement(
         mut jumper,
     ) in players.iter_mut()
     {
+        if animation.0 == animations.dead {
+            return;
+        }
         if keyboard_input.pressed(KeyCode::Space) {
             if !jumper.cooldown {
                 velocity.linvel = Vec2::new(0., 50.);
@@ -287,7 +354,9 @@ fn collect_treasure(
                 if (h1 == &player && h2 == &treasure) || (h1 == &treasure && h2 == &player) {
                     commands.entity(treasure).despawn_recursive();
 
-                    if message_query.iter().next().is_none() && rng.gen_range(0..100) < MSG_FREQUENCY {
+                    if message_query.iter().next().is_none()
+                        && rng.gen_range(0..100) < MSG_FREQUENCY
+                    {
                         let message = messages.choose(&mut rng).unwrap();
                         let mut node = commands.spawn_bundle(NodeBundle {
                             style: Style {

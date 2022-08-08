@@ -2,7 +2,7 @@ use super::animation::{Animation, AnimationData, AnimationState};
 use super::app::AppState;
 use super::assets::GameAssets;
 use super::map::{Map, TILE_HEIGHT, TILE_WIDTH};
-use super::player::Player;
+use super::player::{Player, PlayerAnimations};
 use benimator::Frame;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
@@ -15,6 +15,7 @@ const ENEMY_ATTACK_RADIUS: f32 = 80.;
 enum EnemyState {
     Roaming = 0,
     Attacking = 1,
+    Eating = 2,
 }
 
 #[derive(Component)]
@@ -29,7 +30,7 @@ impl Plugin for EnemyPlugin {
         app.add_system_set(SystemSet::on_enter(AppState::Game).with_system(setup_enemies))
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
-                    .with_system(roaming_enemy_collision)
+                    .with_system(enemy_collision)
                     .with_system(update_enemies),
             );
     }
@@ -82,17 +83,68 @@ fn setup_enemies(
     }
 }
 
-fn roaming_enemy_collision(
-    mut player_query: Query<&Transform, With<Player>>,
+fn enemy_collision(
+    mut commands: Commands,
+    mut player_query: Query<(Entity, &mut Animation, &mut AnimationState), With<Player>>,
     mut enemy_query: Query<(Entity, &mut Enemy, &mut Velocity, &mut TextureAtlasSprite)>,
     mut collision_events: EventReader<CollisionEvent>,
+    game_assets: Res<GameAssets>,
+    audio: Res<Audio>,
+    player_animations: Res<PlayerAnimations>,
 ) {
+    let (player_entity, mut player_animation, mut player_animation_state) =
+        player_query.single_mut();
     for event in collision_events.iter() {
-        for (entity, enemy, mut velocity, mut sprite) in enemy_query.iter_mut() {
+        for (enemy_entity, mut enemy, mut velocity, mut sprite) in enemy_query.iter_mut() {
             if let CollisionEvent::Started(h1, h2, _flags) = event {
-                if enemy.state == EnemyState::Roaming && (h1 == &entity || h2 == &entity) {
+                if enemy.state == EnemyState::Roaming
+                    && (h1 == &enemy_entity || h2 == &enemy_entity)
+                {
                     velocity.linvel.x = -velocity.linvel.x;
                     sprite.flip_x = !sprite.flip_x;
+                }
+                if enemy.state == EnemyState::Attacking
+                    && (h1 == &enemy_entity && h2 == &player_entity)
+                    || (h1 == &player_entity && h2 == &enemy_entity)
+                {
+                    commands.entity(player_entity).insert(GravityScale(0.));
+                    enemy.state = EnemyState::Eating;
+                    velocity.linvel = Vec2::splat(0.);
+                    audio.play(game_assets.crunch_sfx.clone());
+                    player_animation.0 = player_animations.dead.clone();
+                    player_animation_state.0.reset();
+
+                    let mut node = commands.spawn_bundle(NodeBundle {
+                        style: Style {
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            position_type: PositionType::Absolute,
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::FlexEnd,
+                            ..default()
+                        },
+                        color: UiColor(Color::NONE),
+                        ..default()
+                    });
+                    node.add_children(|parent| {
+                        parent
+                            .spawn_bundle(
+                                TextBundle::from_section(
+                                    "YOU WERE\nDEVOURED.",
+                                    TextStyle {
+                                        font: game_assets.ui_font.clone(),
+                                        font_size: 200.0,
+                                        color: Color::WHITE,
+                                    },
+                                )
+                                .with_text_alignment(TextAlignment::CENTER)
+                                .with_style(Style {
+                                    align_self: AlignSelf::Center,
+                                    align_items: AlignItems::Center,
+                                    ..default()
+                                }),
+                            )
+                            .id()
+                    });
                 }
             }
         }
@@ -115,6 +167,7 @@ fn update_enemies(
             .translation
             .distance(player_transform.translation)
             <= ENEMY_ATTACK_RADIUS
+            && enemy.state == EnemyState::Roaming
         {
             enemy.state = EnemyState::Attacking;
         }
@@ -122,6 +175,7 @@ fn update_enemies(
             .translation
             .distance(player_transform.translation)
             > ENEMY_ATTACK_RADIUS
+            && enemy.state == EnemyState::Attacking
         {
             enemy.state = EnemyState::Roaming;
             if enemy_velocity.linvel.x > 0. {
@@ -133,7 +187,8 @@ fn update_enemies(
 
         if enemy.state == EnemyState::Attacking {
             let mut new_velocity = player_transform.translation - enemy_transform.translation;
-            let magnitude = (new_velocity.x * new_velocity.x + new_velocity.y * new_velocity.y).sqrt();
+            let magnitude =
+                (new_velocity.x * new_velocity.x + new_velocity.y * new_velocity.y).sqrt();
             new_velocity.x = new_velocity.x * ENEMY_VEL_MAGNITUDE / magnitude;
             new_velocity.y = new_velocity.y * ENEMY_VEL_MAGNITUDE / magnitude;
 

@@ -42,5 +42,6 @@ fn main() {
         .add_plugin(EnemyPlugin)
         .add_plugin(AnimationPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_system(bevy::window::close_on_esc)
         .run();
 }

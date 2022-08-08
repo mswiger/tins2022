@@ -19,7 +19,7 @@ pub struct GameAssets {
         tile_size_x = 16.,
         tile_size_y = 16.,
         columns = 4,
-        rows = 4,
+        rows = 3,
         padding_x = 0.,
         padding_y = 0.
     ))]
@@ -51,6 +51,9 @@ pub struct GameAssets {
 
     #[asset(path = "sounds/noise.ogg")]
     pub noise_sfx: Handle<AudioSource>,
+
+    #[asset(path = "sounds/crunch.ogg")]
+    pub crunch_sfx: Handle<AudioSource>,
 
     #[asset(path = "sounds/coin.wav")]
     pub coin_sfx: Handle<AudioSource>,
