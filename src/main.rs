@@ -2,6 +2,7 @@ mod animation;
 mod app;
 mod assets;
 mod camera;
+mod enemy;
 mod map;
 mod player;
 mod treasure;
@@ -9,10 +10,11 @@ mod treasure;
 use animation::AnimationPlugin;
 use app::AppState;
 use assets::GameAssets;
-use camera::CameraPlugin;
 use bevy::{prelude::*, render::texture::ImageSettings};
 use bevy_asset_loader::prelude::*;
 use bevy_rapier2d::prelude::*;
+use camera::CameraPlugin;
+use enemy::EnemyPlugin;
 use map::MapPlugin;
 use player::PlayerPlugin;
 use treasure::TreasurePlugin;
@@ -37,6 +39,7 @@ fn main() {
         .add_plugin(MapPlugin)
         .add_plugin(TreasurePlugin)
         .add_plugin(PlayerPlugin)
+        .add_plugin(EnemyPlugin)
         .add_plugin(AnimationPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .run();

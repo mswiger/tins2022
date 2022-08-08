@@ -26,6 +26,17 @@ pub struct GameAssets {
     #[asset(path = "textures/player.png")]
     pub player_atlas: Handle<TextureAtlas>,
 
+    #[asset(texture_atlas(
+        tile_size_x = 16.,
+        tile_size_y = 16.,
+        columns = 2,
+        rows = 1,
+        padding_x = 0.,
+        padding_y = 0.
+    ))]
+    #[asset(path = "textures/piranha.png")]
+    pub piranha_atlas: Handle<TextureAtlas>,
+
     #[asset(path = "textures/coin.png")]
     pub coin_image: Handle<Image>,
 

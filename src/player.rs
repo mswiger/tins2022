@@ -19,7 +19,7 @@ const MSG_THRESHOLD: Duration = Duration::from_millis(200);
 const MSG_FREQUENCY: u32 = 20;
 
 #[derive(Component)]
-struct Player;
+pub struct Player;
 
 #[derive(Component)]
 struct Jumper {
@@ -91,8 +91,8 @@ fn setup_player(
         Frame::new(4, Duration::from_millis(250)),
         Frame::new(5, Duration::from_millis(250)),
     ]));
-
     let jump_handle = animations.add(jump);
+
     commands.insert_resource(PlayerAnimations {
         idle: idle_handle.clone(),
         walk: walk_handle.clone(),
@@ -129,6 +129,7 @@ fn setup_player(
             linvel: Vec2::new(0., 0.),
             angvel: 0.,
         })
+        .insert(Ccd::enabled())
         .insert(ActiveEvents::COLLISION_EVENTS)
         .insert(LockedAxes::ROTATION_LOCKED);
 }

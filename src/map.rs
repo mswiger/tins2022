@@ -15,7 +15,7 @@ pub const TILE_WIDTH: f32 = 16.;
 pub const TILE_HEIGHT: f32 = 16.;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-enum Tile {
+pub enum Tile {
     Empty,
     Wall,
 }
@@ -23,9 +23,10 @@ enum Tile {
 #[derive(Debug, TypeUuid)]
 #[uuid = "e44e9629-7b52-41aa-94de-0a3bc1146b1e"]
 pub struct Map {
-    tiles: [[Tile; MAP_WIDTH]; MAP_HEIGHT],
+    pub tiles: [[Tile; MAP_WIDTH]; MAP_HEIGHT],
     pub player_spawn: (u32, u32),
     pub treasures: Vec<(u32, u32)>,
+    pub enemies: Vec<(u32, u32)>,
 }
 
 #[derive(Default)]
@@ -41,7 +42,8 @@ impl AssetLoader for MapLoader {
             let mut map = Map {
                 tiles: [[Tile::Empty; MAP_WIDTH]; MAP_HEIGHT],
                 player_spawn: (0, 0),
-                treasures: vec!(),
+                treasures: vec![],
+                enemies: vec![],
             };
             let map_str = str::from_utf8(bytes).unwrap().trim();
             let lines = map_str
@@ -61,9 +63,13 @@ impl AssetLoader for MapLoader {
                         'P' => {
                             map.player_spawn = (j as u32, i as u32);
                             Tile::Empty
-                        },
+                        }
                         'T' => {
                             map.treasures.push((j as u32, i as u32));
+                            Tile::Empty
+                        }
+                        'E' => {
+                            map.enemies.push((j as u32, i as u32));
                             Tile::Empty
                         }
                         _ => Tile::Empty,
