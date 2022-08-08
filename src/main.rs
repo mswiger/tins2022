@@ -30,7 +30,7 @@ fn main() {
         )
         .add_state(AppState::Loading)
         .insert_resource(WindowDescriptor {
-            title: "[GameDev] TINS 2022".to_string(),
+            title: "Acquire Currency".to_string(),
             width: 1920.,
             height: 1080.,
             ..Default::default()
