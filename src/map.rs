@@ -115,7 +115,7 @@ fn setup_map(mut commands: Commands, maps: Res<Assets<Map>>, game_assets: Res<Ga
             let tile = map.tiles[i][j];
             let tile_index = match tile {
                 Tile::Wall => 0,
-                _ => 1,
+                _ => 3,
             };
             let mut entity = commands.spawn_bundle(SpriteSheetBundle {
                 texture_atlas: game_assets.tile_set_atlas.clone(),
