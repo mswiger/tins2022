@@ -9,7 +9,9 @@ use bevy_rapier2d::prelude::*;
 use std::time::Duration;
 
 #[derive(Component)]
-pub struct Portal;
+pub struct Portal {
+    pub opened: bool
+}
 
 pub struct PortalAnimations {
     opened: Handle<AnimationData>,
@@ -40,8 +42,8 @@ fn setup_portal(
     let closed_handle = animations.add(closed);
 
     let opened = AnimationData(benimator::Animation::from_frames(vec![
-        Frame::new(1, Duration::from_millis(250)),
         Frame::new(2, Duration::from_millis(250)),
+        Frame::new(1, Duration::from_millis(250)),
     ]));
     let opened_handle = animations.add(opened);
 
@@ -68,17 +70,24 @@ fn setup_portal(
         .insert(AnimationState::default())
         .insert(Collider::cuboid(7., 7.))
         .insert(Sensor)
-        .insert(Portal);
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(Portal {
+            opened: false
+        });
 }
 
 fn update_portal(
     treasure_query: Query<Entity, With<Treasure>>,
-    mut portal_query: Query<(&mut Animation, &mut AnimationState), With<Portal>>,
+    mut portal_query: Query<(&mut Portal, &mut Animation, &mut AnimationState)>,
     portal_animations: Res<PortalAnimations>,
+    game_assets: Res<GameAssets>,
+    audio: Res<Audio>,
 ) {
-    if treasure_query.iter().next().is_none() {
-        let (mut animation, mut animation_state) = portal_query.single_mut();
+    let (mut portal, mut animation, mut animation_state) = portal_query.single_mut();
+    if treasure_query.iter().next().is_none() && !portal.opened {
         animation.0 = portal_animations.opened.clone();
-        animation_state.0.reset();
+        animation_state.reset();
+        portal.opened = true;
+        audio.play(game_assets.portal_sfx.clone());
     }
 }

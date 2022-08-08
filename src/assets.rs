@@ -68,4 +68,10 @@ pub struct GameAssets {
 
     #[asset(path = "sounds/coin.wav")]
     pub coin_sfx: Handle<AudioSource>,
+
+    #[asset(path = "sounds/portal.wav")]
+    pub portal_sfx: Handle<AudioSource>,
+
+    #[asset(path = "sounds/teleport.wav")]
+    pub teleport_sfx: Handle<AudioSource>,
 }

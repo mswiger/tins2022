@@ -2,9 +2,10 @@ use super::animation::{Animation, AnimationData, AnimationState};
 use super::app::AppState;
 use super::assets::GameAssets;
 use super::map::{Map, TILE_HEIGHT, TILE_WIDTH};
+use super::portal::Portal;
 use super::treasure::Treasure;
 use benimator::Frame;
-use bevy::{input::keyboard::KeyboardInput, prelude::*};
+use bevy::{input::keyboard::KeyboardInput, prelude::*, render::view::Visibility};
 use bevy_rapier2d::prelude::*;
 use rand::seq::SliceRandom;
 use rand::Rng;
@@ -50,6 +51,9 @@ struct PlayerDirection(Direction);
 #[derive(Component)]
 struct Instructions;
 
+#[derive(Component)]
+struct Success;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
@@ -64,6 +68,7 @@ impl Plugin for PlayerPlugin {
                 .with_system(player_movement)
                 .with_system(jump_reset)
                 .with_system(collect_treasure)
+                .with_system(enter_portal)
                 .with_system(despawn_messages)
                 .with_system(despawn_instructions),
         );
@@ -210,6 +215,7 @@ fn player_movement(
             &mut Velocity,
             &mut PlayerDirection,
             &mut Jumper,
+            &Visibility,
         ),
         (With<RigidBody>, With<Player>),
     >,
@@ -222,9 +228,10 @@ fn player_movement(
         mut velocity,
         mut direction,
         mut jumper,
+        visibility,
     ) in players.iter_mut()
     {
-        if animation.0 == animations.dead {
+        if animation.0 == animations.dead || !visibility.is_visible {
             return;
         }
         if keyboard_input.pressed(KeyCode::Space) {
@@ -396,6 +403,67 @@ fn collect_treasure(
                         audio.play(game_assets.coin_sfx.clone());
                     }
                 }
+            }
+        }
+    }
+}
+
+fn enter_portal(
+    mut commands: Commands,
+    mut player_query: Query<(Entity, &mut Visibility), With<Player>>,
+    portal_query: Query<(Entity, &mut Portal)>,
+    success_query: Query<&Success>,
+    mut collision_events: EventReader<CollisionEvent>,
+    game_assets: Res<GameAssets>,
+    audio: Res<Audio>,
+) {
+    if !success_query.iter().next().is_none() {
+        return;
+    }
+
+    for event in collision_events.iter() {
+        if let CollisionEvent::Started(h1, h2, _flags) = event {
+            let (player_entity, mut player_visibility) = player_query.single_mut();
+            let (portal_entity, portal) = portal_query.single();
+
+            if portal.opened
+                && ((h1 == &player_entity && h2 == &portal_entity)
+                    || (h1 == &portal_entity && h2 == &player_entity))
+            {
+                let mut node = commands.spawn_bundle(NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        position_type: PositionType::Absolute,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::FlexEnd,
+                        ..default()
+                    },
+                    color: UiColor(Color::NONE),
+                    ..default()
+                });
+                node.add_children(|parent| {
+                    parent
+                        .spawn_bundle(
+                            TextBundle::from_section(
+                                "SUCCESS.\n",
+                                TextStyle {
+                                    font: game_assets.ui_font.clone(),
+                                    font_size: 200.0,
+                                    color: Color::WHITE,
+                                },
+                            )
+                            .with_text_alignment(TextAlignment::CENTER)
+                            .with_style(Style {
+                                align_self: AlignSelf::Center,
+                                align_items: AlignItems::Center,
+                                ..default()
+                            }),
+                        )
+                        .id()
+                });
+                node.insert(Success);
+                audio.play(game_assets.teleport_sfx.clone());
+                player_visibility.is_visible = false;
             }
         }
     }

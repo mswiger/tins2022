@@ -85,14 +85,17 @@ fn setup_enemies(
 
 fn enemy_collision(
     mut commands: Commands,
-    mut player_query: Query<(Entity, &mut Animation, &mut AnimationState), With<Player>>,
+    mut player_query: Query<
+        (Entity, &mut Animation, &mut AnimationState, &Visibility),
+        With<Player>,
+    >,
     mut enemy_query: Query<(Entity, &mut Enemy, &mut Velocity, &mut TextureAtlasSprite)>,
     mut collision_events: EventReader<CollisionEvent>,
     game_assets: Res<GameAssets>,
     audio: Res<Audio>,
     player_animations: Res<PlayerAnimations>,
 ) {
-    let (player_entity, mut player_animation, mut player_animation_state) =
+    let (player_entity, mut player_animation, mut player_animation_state, player_visibility) =
         player_query.single_mut();
     for event in collision_events.iter() {
         for (enemy_entity, mut enemy, mut velocity, mut sprite) in enemy_query.iter_mut() {
@@ -103,7 +106,8 @@ fn enemy_collision(
                     velocity.linvel.x = -velocity.linvel.x;
                     sprite.flip_x = !sprite.flip_x;
                 }
-                if enemy.state == EnemyState::Attacking
+                if player_visibility.is_visible
+                    && enemy.state == EnemyState::Attacking
                     && (h1 == &enemy_entity && h2 == &player_entity)
                     || (h1 == &player_entity && h2 == &enemy_entity)
                 {
@@ -152,7 +156,7 @@ fn enemy_collision(
 }
 
 fn update_enemies(
-    player_query: Query<&Transform, With<Player>>,
+    player_query: Query<(&Transform, &Visibility), With<Player>>,
     mut enemy_query: Query<(
         &Transform,
         &mut Velocity,
@@ -160,7 +164,7 @@ fn update_enemies(
         &mut TextureAtlasSprite,
     )>,
 ) {
-    let player_transform = player_query.single();
+    let (player_transform, player_visibility) = player_query.single();
     for (enemy_transform, mut enemy_velocity, mut enemy, mut enemy_sprite) in enemy_query.iter_mut()
     {
         if enemy_transform
@@ -168,13 +172,15 @@ fn update_enemies(
             .distance(player_transform.translation)
             <= ENEMY_ATTACK_RADIUS
             && enemy.state == EnemyState::Roaming
+            && player_visibility.is_visible
         {
             enemy.state = EnemyState::Attacking;
         }
-        if enemy_transform
+        if (enemy_transform
             .translation
             .distance(player_transform.translation)
             > ENEMY_ATTACK_RADIUS
+            || !player_visibility.is_visible)
             && enemy.state == EnemyState::Attacking
         {
             enemy.state = EnemyState::Roaming;
