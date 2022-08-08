@@ -26,9 +26,21 @@ pub struct GameAssets {
     #[asset(path = "textures/player.png")]
     pub player_atlas: Handle<TextureAtlas>,
 
+    #[asset(path = "textures/coin.png")]
+    pub coin_image: Handle<Image>,
+
     #[asset(path = "maps/1.map")]
     pub map: Handle<Map>,
 
     #[asset(path = "music/Bonedust - When You Are Dead.mp3")]
     pub bgm: Handle<AudioSource>,
+
+    #[asset(path = "fonts/FiraSans-Bold.ttf")]
+    pub ui_font: Handle<Font>,
+
+    #[asset(path = "sounds/noise.ogg")]
+    pub noise_sfx: Handle<AudioSource>,
+
+    #[asset(path = "sounds/coin.wav")]
+    pub coin_sfx: Handle<AudioSource>,
 }

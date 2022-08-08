@@ -2,12 +2,21 @@ use super::animation::{Animation, AnimationData, AnimationState};
 use super::app::AppState;
 use super::assets::GameAssets;
 use super::map::{Map, TILE_HEIGHT, TILE_WIDTH};
+use super::treasure::Treasure;
 use benimator::Frame;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use rand::seq::SliceRandom;
+use rand::Rng;
 use std::time::Duration;
 
 const VEL_THRESHOLD: f32 = 0.001;
+
+// How long to show message
+const MSG_THRESHOLD: Duration = Duration::from_millis(200);
+
+// Percentage of time that a message pops up when collecting treasure.
+const MSG_FREQUENCY: u32 = 20;
 
 #[derive(Component)]
 struct Player;
@@ -17,6 +26,9 @@ struct Jumper {
     cooldown: bool,
     grounded: bool,
 }
+
+#[derive(Component)]
+struct Message(Duration);
 
 struct PlayerAnimations {
     idle: Handle<AnimationData>,
@@ -42,7 +54,9 @@ impl Plugin for PlayerPlugin {
             .add_system_set(
                 SystemSet::on_update(AppState::Game)
                     .with_system(player_movement)
-                    .with_system(jump_reset),
+                    .with_system(jump_reset)
+                    .with_system(collect_treasure)
+                    .with_system(despawn_messages),
             );
     }
 }
@@ -240,6 +254,91 @@ fn jump_reset(
                     }
                 }
             }
+        }
+    }
+}
+
+fn collect_treasure(
+    mut commands: Commands,
+    player_query: Query<Entity, With<Player>>,
+    treasure_query: Query<Entity, With<Treasure>>,
+    message_query: Query<&Message>,
+    mut collision_events: EventReader<CollisionEvent>,
+    game_assets: Res<GameAssets>,
+    time: Res<Time>,
+    audio: Res<Audio>,
+) {
+    let messages = vec![
+        "CONSUME".to_string(),
+        "MARRY\nAND\nREPRODUCE".to_string(),
+        "CONFORM".to_string(),
+        "NO\nINDEPENDENT\nTHOUGHT".to_string(),
+        "DO\nNOT\nQUESTION\nAUTHORITY".to_string(),
+        "WORK 8 HOURS\nSLEEP 8 HOURS\nPLAY 8 HOURS".to_string(),
+        "HONOR\nAPATHY".to_string(),
+    ];
+    for event in collision_events.iter() {
+        if let CollisionEvent::Started(h1, h2, _flags) = event {
+            let player = player_query.single();
+            let mut rng = rand::thread_rng();
+
+            for treasure in treasure_query.iter() {
+                if (h1 == &player && h2 == &treasure) || (h1 == &treasure && h2 == &player) {
+                    commands.entity(treasure).despawn_recursive();
+
+                    if message_query.iter().next().is_none() && rng.gen_range(0..100) < MSG_FREQUENCY {
+                        let message = messages.choose(&mut rng).unwrap();
+                        let mut node = commands.spawn_bundle(NodeBundle {
+                            style: Style {
+                                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                                position_type: PositionType::Absolute,
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::FlexEnd,
+                                ..default()
+                            },
+                            ..default()
+                        });
+                        node.add_children(|parent| {
+                            parent
+                                .spawn_bundle(
+                                    // Create a TextBundle that has a Text with a single section.
+                                    TextBundle::from_section(
+                                        // Accepts a `String` or any type that converts into a `String`, such as `&str`
+                                        message,
+                                        TextStyle {
+                                            font: game_assets.ui_font.clone(),
+                                            font_size: 200.0,
+                                            color: Color::BLACK,
+                                        },
+                                    ) // Set the alignment of the Text
+                                    .with_text_alignment(TextAlignment::CENTER)
+                                    .with_style(Style {
+                                        align_self: AlignSelf::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    }),
+                                )
+                                .id()
+                        });
+                        node.insert(Message(time.time_since_startup()));
+                        audio.play(game_assets.noise_sfx.clone());
+                    } else {
+                        audio.play(game_assets.coin_sfx.clone());
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn despawn_messages(
+    mut commands: Commands,
+    mut message_query: Query<(Entity, &mut Message)>,
+    time: Res<Time>,
+) {
+    for (entity, message) in message_query.iter_mut() {
+        if time.time_since_startup() - message.0 > MSG_THRESHOLD {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }

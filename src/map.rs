@@ -25,6 +25,7 @@ enum Tile {
 pub struct Map {
     tiles: [[Tile; MAP_WIDTH]; MAP_HEIGHT],
     pub player_spawn: (u32, u32),
+    pub treasures: Vec<(u32, u32)>,
 }
 
 #[derive(Default)]
@@ -40,6 +41,7 @@ impl AssetLoader for MapLoader {
             let mut map = Map {
                 tiles: [[Tile::Empty; MAP_WIDTH]; MAP_HEIGHT],
                 player_spawn: (0, 0),
+                treasures: vec!(),
             };
             let map_str = str::from_utf8(bytes).unwrap().trim();
             let lines = map_str
@@ -58,6 +60,10 @@ impl AssetLoader for MapLoader {
                         '1' => Tile::Wall,
                         'P' => {
                             map.player_spawn = (j as u32, i as u32);
+                            Tile::Empty
+                        },
+                        'T' => {
+                            map.treasures.push((j as u32, i as u32));
                             Tile::Empty
                         }
                         _ => Tile::Empty,

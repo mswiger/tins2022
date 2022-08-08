@@ -8,7 +8,7 @@ use bevy::{
         render_resource::*,
         renderer::RenderQueue,
         view::RenderLayers,
-        RenderApp,RenderStage,
+        RenderApp, RenderStage,
     },
     sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle, RenderMaterials2d},
 };
@@ -65,18 +65,20 @@ fn setup_cameras(
 
     commands.insert_resource(ScreenImage(image_handle.clone()));
 
-    commands.spawn_bundle(Camera2dBundle {
-        camera: Camera {
-            target: RenderTarget::Image(image_handle.clone()),
+    commands
+        .spawn_bundle(Camera2dBundle {
+            camera: Camera {
+                target: RenderTarget::Image(image_handle.clone()),
+                ..default()
+            },
+            projection: bevy::render::camera::OrthographicProjection {
+                scale: 1. / 3.,
+                ..default()
+            },
+            transform: Transform::from_xyz(280., 152., 999.),
             ..default()
-        },
-        projection: bevy::render::camera::OrthographicProjection {
-            scale: 1. / 3.,
-            ..default()
-        },
-        transform: Transform::from_xyz(280., 152., 999.),
-        ..default()
-    });
+        })
+        .insert(UiCameraConfig { show_ui: false });
 
     // This specifies the layer used for the post processing camera, which will be attached to the post processing camera and 2d quad.
     let post_processing_layer = RenderLayers::layer((RenderLayers::TOTAL_LAYERS - 1) as u8);
@@ -132,9 +134,11 @@ fn prepare_post_processing_material(
             for binding in material.bindings.iter() {
                 if let OwnedBindingResource::Buffer(cur_buffer) = binding {
                     let mut buffer = encase::UniformBuffer::new(Vec::new());
-                    buffer.write(&PostProcessingMaterialUniformData {
-                        time_since_startup: time.time_since_startup,
-                    }).unwrap();
+                    buffer
+                        .write(&PostProcessingMaterialUniformData {
+                            time_since_startup: time.time_since_startup,
+                        })
+                        .unwrap();
                     render_queue.write_buffer(cur_buffer, 0, buffer.as_ref());
                 }
             }
