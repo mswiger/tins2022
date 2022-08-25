@@ -12,6 +12,10 @@ use bevy::{
     },
     sprite::{Material2d, Material2dPlugin, MaterialMesh2dBundle, RenderMaterials2d},
 };
+use std::cmp::min;
+
+const GAME_WIDTH: u32 = 640;
+const GAME_HEIGHT: u32 = 360;
 
 #[derive(Default)]
 pub struct ScreenImage(Handle<Image>);
@@ -65,6 +69,11 @@ fn setup_cameras(
 
     commands.insert_resource(ScreenImage(image_handle.clone()));
 
+    let scale = min(
+        window.physical_width() / GAME_WIDTH,
+        window.physical_height() / GAME_HEIGHT,
+    );
+
     commands
         .spawn_bundle(Camera2dBundle {
             camera: Camera {
@@ -72,7 +81,7 @@ fn setup_cameras(
                 ..default()
             },
             projection: bevy::render::camera::OrthographicProjection {
-                scale: 1. / 3.,
+                scale: 1. / (scale as f32),
                 ..default()
             },
             transform: Transform::from_xyz(280., 152., 999.),
@@ -114,7 +123,7 @@ fn setup_cameras(
                 ..default()
             },
             projection: bevy::render::camera::OrthographicProjection {
-                scale: 1. / 3.,
+                scale: 1. / (scale as f32),
                 ..default()
             },
             transform: Transform::from_xyz(280., 152., 999.),

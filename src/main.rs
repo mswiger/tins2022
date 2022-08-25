@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod animation;
 mod app;
 mod assets;
@@ -11,7 +13,7 @@ mod treasure;
 use animation::AnimationPlugin;
 use app::AppState;
 use assets::GameAssets;
-use bevy::{prelude::*, render::texture::ImageSettings};
+use bevy::{prelude::*, render::texture::ImageSettings, window::WindowMode};
 use bevy_asset_loader::prelude::*;
 use bevy_rapier2d::prelude::*;
 use camera::CameraPlugin;
@@ -33,6 +35,7 @@ fn main() {
             title: "Acquire Currency".to_string(),
             width: 1920.,
             height: 1080.,
+            mode: WindowMode::BorderlessFullscreen,
             ..Default::default()
         })
         .insert_resource(ImageSettings::default_nearest()) // prevents blurry sprites
