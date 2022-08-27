@@ -4,6 +4,8 @@ Swim around the level and collect all of the treasure, avoiding the deadly piran
 If you get too close to a piranha, it will chase you until you can create some distance.
 Once all of the treasure has been collected, the portal will open so you may depart.
 
+![splash](https://user-images.githubusercontent.com/363815/187045269-1b2d83ee-7e35-4bbf-bc3d-5fe0ff62180b.png)
+
 ## Controls
 * Arrow Keys: Movement
 * Spacebar: Swim Upwards
